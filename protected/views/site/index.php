@@ -60,4 +60,4 @@
 </div><!-- search-form -->
 
 
-<p>This webstite is part of the FreetuxTV project : <a href="http://code.google.com/p/freetuxtv/">http://code.google.com/p/freetuxtv/</a>.
+<p>This webstite is part of the FreetuxTV project : <a href="https://github.com/freetuxtv">https://github.com/freetuxtv</a>.
