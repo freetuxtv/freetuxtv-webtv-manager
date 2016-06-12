@@ -158,3 +158,49 @@ div.wide.form .buttons, div.wide.form .hint, div.wide.form .errorMessage
 	clear: left;
 	padding-left: 110px;
 }
+
+/* div for warnings */
+
+div.warning
+{
+	border: 2px solid #FEE000;
+	padding: 7px 7px 12px 7px;
+	margin: 0 0 20px 0;
+	background: #FEECCC;
+	font-size: 0.9em;
+}
+
+/* div for table */
+
+div.table {
+	display:table;
+	border-collapse:collapse;
+	width:100%;
+}
+
+div.caption {
+    display:block;
+    text-align:left;
+	font-weight: bold;
+	font-size: 1.0em;
+}
+
+div.tbody {
+    display:table-row-group;
+}
+
+div.tr {
+    display:table-row;
+}
+
+div.td {
+    display:table-cell;
+    padding:5px;
+}
+
+div.td label
+{
+	font-weight: bold;
+	font-size: 0.9em;
+	display: block;
+}

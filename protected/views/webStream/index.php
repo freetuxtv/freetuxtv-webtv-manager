@@ -3,43 +3,66 @@ $this->breadcrumbs=array(
 	'Web Streams',
 );
 
+/*
 $this->menu=array(
 	array('label'=>'Create WebStream', 'url'=>array('create')),
 	array('label'=>'Manage WebStream', 'url'=>array('admin')),
 );
+*/
 
 ?>
 
 <h1>Web Streams</h1>
 
+<?php echo $this->renderPartial('_searchform', array('modelSearchForm'=>$modelSearchForm)); ?>
+
+<br/><br/>
+
 <?php
-	$playlist_link = "./playlist/index.php";
+	$querystring="";
+	$lng="all";
+	$type="all";
+	foreach ($playlist_params as $key => $val)
+	{
+		if($key == "lng"){
+			$lng = $val;
+		}else if($key == "type"){
+			$type = WebStream::getPlaylistTypeStreamNameById($val);
+		}else if($key == "status" && $val == WebStream::WEBSTREAM_STATUS_WORKING){
+			// We do nothing
+		}else{
+			if($querystring==""){
+				$querystring.="?";
+			}else{
+				$querystring.="&";
+			}
+			$querystring.=$key."=".$val;
+		}
+	}
+	if($lng == "all" && $type == "all"){
+		$playlist_link = $this->createUrl("playlists/playlist.m3u".$querystring);
+	}else{
+		$playlist_link = $this->createUrl("playlists/playlist_".$type."_".$lng.".m3u".$querystring);
+	}
+  	$params = array_merge(array("format"=>""), $playlist_params);
 ?>
 
-Playlist corresponding to the search : <a href="<?php echo $playlist_link; ?>"><?php echo $playlist_link; ?></a>
+<b>Export for the current search:</b>
+<?php
+	// Export for M3U format
+	$params["format"] = "m3u";
+	$link = $this->createUrl("WebStreamExport/index", $params);
+	echo CHtml::link("M3U", $link);
+	echo " - ";
+	// Export for XML format
+	$params["format"] = "xml";
+	$link = $this->createUrl("WebStreamExport/index", $params);
+	echo CHtml::link("XML", $link);
+	echo " - ";
+	// Export for coolfvwmmanager format
+	$params["format"] = "coolfvwmmanager";
+	$link = $this->createUrl("WebStreamExport/index", $params);
+	echo CHtml::link("Coolfvwmmanager", $link);
+?>
 
-<?php $this->widget('zii.widgets.grid.CGridView', array(
-	'dataProvider'=>$dataProvider,
-	'columns'=>array(
-        array(
-            'name'=>'WebStream',
-			'type'=>'html',
-			'value'=>'$data->Name.($data->RequiredIsp? " (Only for <b>".$data->RequiredIsp."</b> provider)" : "")."<br/>"."=> <a href=\"".$data->Url."\">".$data->Url."</a>"',
-        ),
-        array(
-            'name'=>'Language',
-			'type'=>'image',
-			'htmlOptions' => array('style'=>'text-align:center'),
-            'value'=>'"images/lang/softclean/".strtoupper($data->LangCode).".png"',
-        ),
-        array(
-            'name'=>'Status',
-			'type'=>'html',
-            'value'=>'"<font color=\"".$data->StreamStatus->Color."\">".$data->StreamStatus->Label."</font>"',
-        ),
-        array(
-			'class'=>'CButtonColumn',
-            'header'=>'Edit',
-        ),
-    ),
-)); ?>
+<?php echo $this->renderPartial('_results', array('dataProvider'=>$dataProvider)); ?>

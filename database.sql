@@ -1,6 +1,12 @@
-DROP DATABASE IF EXISTS freetuxtv;
-CREATE DATABASE freetuxtv;
-USE freetuxtv;
+-- ALTER DATABASE freetuxtv CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS wtvmT_User;
+DROP TABLE IF EXISTS wtvmT_WebStream;
+DROP TABLE IF EXISTS wtvmT_StreamStatus;
+DROP TABLE IF EXISTS wtvmT_TVChannel;
+DROP TABLE IF EXISTS wtvmT_TVChannelType;
+DROP TABLE IF EXISTS wtvmT_Country;
+DROP TABLE IF EXISTS wtvmT_Lang;
 
 CREATE TABLE IF NOT EXISTS wtvmT_Lang (
 	Code CHAR(2) NOT NULL,
@@ -50,6 +56,7 @@ CREATE TABLE IF NOT EXISTS wtvmT_WebStream (
 	Id INTEGER NOT NULL AUTO_INCREMENT,
 	Name VARCHAR(50) NOT NULL,
 	Url VARCHAR(255) NULL,
+	TypeStream INTEGER NULL,
 	StreamStatusCode INTEGER NOT NULL DEFAULT '1',
 	RequiredIsp VARCHAR(50) NULL,
 	LangCode CHAR(2) NULL,
@@ -218,3 +225,416 @@ INSERT INTO wtvmT_StreamStatus (Code, Label, Color, Searchable) VALUES
 	(5, 'Invalid', 'gray', TRUE),
 	(6, 'Dead', 'darkred', TRUE),
 	(7, 'Forbidden', 'red', FALSE);
+
+DROP TABLE IF EXISTS wtvmT_AuthAssignment;
+DROP TABLE IF EXISTS wtvmT_AuthItemChild;
+DROP TABLE IF EXISTS wtvmT_AuthItem;
+
+CREATE TABLE wtvmT_AuthItem
+(
+   name                 VARCHAR(64) NOT NULL,
+   type                 INTEGER NOT NULL,
+   description          text,
+   bizrule              text,
+   data                 text,
+   primary key (name)
+);
+
+CREATE TABLE wtvmT_AuthItemChild
+(
+   parent               VARCHAR(64) NOT NULL,
+   child                VARCHAR(64) NOT NULL,
+   primary key (parent,child),
+   foreign key (parent) references AuthItem (name) ON DELETE CASCADE ON UPDATE CASCADE,
+   foreign key (child) references AuthItem (name) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE wtvmT_AuthAssignment
+(
+   itemname             VARCHAR(64) NOT NULL,
+   userid               VARCHAR(64) NOT NULL,
+   bizrule              text,
+   data                 text,
+   primary key (itemname,userid),
+   foreign key (itemname) references AuthItem (name) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO `wtvmT_AuthItem` (`name`, `type`, `description`, `bizrule`, `data`) VALUES
+	('sendWebStream', 0, 'Send a WebStream', NULL, 'N;'),
+	('editWebStream', 0, 'Edit a WebStream', NULL, 'N;'),
+	('changeStatusWebStream', 0, 'Change the status of a WebStream', NULL, 'N;'),
+	('guest', 2, '', NULL, 'N;'),
+	('contributor', 2, '', NULL, 'N;'),
+	('moderator', 2, '', NULL, 'N;');
+
+INSERT INTO `wtvmT_AuthItemChild` (`parent`, `child`) VALUES
+	('contributor', 'editWebStream'),
+	('contributor', 'guest'),
+	('guest', 'sendWebStream'),
+	('moderator', 'changeStatusWebStream'),
+	('moderator', 'contributor');
+
+CREATE TABLE IF NOT EXISTS wtvmT_History (
+	Id INTEGER NOT NULL AUTO_INCREMENT,
+	Date DATETIME NOT NULL,
+	Username VARCHAR(20) NULL,
+	Email VARCHAR(255) NULL,
+	UserId INTEGER NULL,
+	RemoteAddr VARCHAR(40) NOT NULL,
+	ActionType TINYINT NOT NULL,
+	ActionDetails TEXT NULL,
+	EntityType TINYINT NOT NULL,
+	EntityId INTEGER NOT NULL,
+	CONSTRAINT PK_History PRIMARY KEY(Id),
+	CONSTRAINT FK_History_User FOREIGN KEY (UserId)
+		REFERENCES wtvmT_User(Id)
+) TYPE=InnoDB;
+
+ALTER TABLE wtvmT_WebStream MODIFY COLUMN Name VARCHAR(100);
+
+SET foreign_key_checks = 0;
+ALTER TABLE wtvmT_Country CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_History CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_Lang CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_StreamStatus CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_TVChannel CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_TVChannelType CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_User CONVERT TO CHARACTER SET utf8;
+ALTER TABLE wtvmT_WebStream CONVERT TO CHARACTER SET utf8;
+SET foreign_key_checks = 1;
+
+ALTER TABLE wtvmT_WebStream MODIFY COLUMN Comments TEXT NULL;
+
+-- Version 2011-06-19
+
+ALTER TABLE wtvmT_StreamStatus ADD COLUMN Description TEXT NOT NULL AFTER Label;
+INSERT INTO wtvmT_StreamStatus (Code, Label, Color, Searchable) VALUES
+	(8, 'Test failed', 'gray', TRUE);
+UPDATE wtvmT_StreamStatus SET Description='The stream have been submitted by an user, but not tested by a moderator.' WHERE Code = 1;
+UPDATE wtvmT_StreamStatus SET Description='The stream have been approved by a moderator and should work.' WHERE Code = 2;
+UPDATE wtvmT_StreamStatus SET Description='The stream is still working but should not be used.' WHERE Code = 3;
+UPDATE wtvmT_StreamStatus SET Description='The stream is exactly identical to another stream.' WHERE Code = 4;
+UPDATE wtvmT_StreamStatus SET Description='The stream URL is not valid.' WHERE Code = 5;
+UPDATE wtvmT_StreamStatus SET Description='The stream is not working anymore.' WHERE Code = 6;
+UPDATE wtvmT_StreamStatus SET Description='The stream have been reported as illegal.' WHERE Code = 7;
+UPDATE wtvmT_StreamStatus SET Description='The stream URL is valid and have been tested by a moderator, but he don\'t succeed to use it.' WHERE Code = 8;
+
+-- Version 2011-09-25
+
+ALTER TABLE wtvmT_WebStream ADD CountryCode CHAR(2) NULL AFTER LangCode;
+ALTER TABLE wtvmT_WebStream ADD CONSTRAINT FK_WebStream_Country FOREIGN KEY (CountryCode) REFERENCES wtvmT_Country (Code);
+
+INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
+	('ad', 'Andorra'),
+	('ae', 'United Arab Emirates'),
+	('af', 'Afghanistan'),
+	('ag', 'Antigua and Barbuda'),
+	('ai', 'Anguilla'),
+	('al', 'Albania'),
+	('am', 'Armenia'),
+	('an', 'Netherlands Antilles'),
+	('ao', 'Angola'),
+	('aq', 'Antarctica'),
+	('ar', 'Argentina'),
+	('as', 'American Samoa'),
+	('at', 'Austria'),
+	('au', 'Australia'),
+	('aw', 'Aruba'),
+	('az', 'Azerbaijan'),
+	('ba', 'Bosnia and Herzegovi'),
+	('bb', 'Barbados'),
+	('bd', 'Bangladesh'),
+	('be', 'Belgium'),
+	('bf', 'Burkina Faso'),
+	('bg', 'Bulgaria'),
+	('bh', 'Bahrain'),
+	('bi', 'Burundi'),
+	('bj', 'Benin'),
+	('bm', 'Bermuda'),
+	('bn', 'Brunei Darussalam'),
+	('bo', 'Bolivia'),
+	('br', 'Brazil'),
+	('bs', 'Bahamas'),
+	('bt', 'Bhutan'),
+	('bv', 'Bouvet Island'),
+	('bw', 'Botswana'),
+	('by', 'Belarus'),
+	('bz', 'Belize'),
+	('ca', 'Canada'),
+	('cc', 'Cocos (Keeling) Isla'),
+	('cd', 'Congo, the Democrati'),
+	('cf', 'Central African Repu'),
+	('cg', 'Congo'),
+	('ch', 'Switzerland'),
+	('ci', 'Cote D''Ivoire'),
+	('ck', 'Cook Islands'),
+	('cl', 'Chile'),
+	('cm', 'Cameroon'),
+	('cn', 'China'),
+	('co', 'Colombia'),
+	('cr', 'Costa Rica'),
+	('cs', 'Serbia and Montenegr'),
+	('cu', 'Cuba'),
+	('cv', 'Cape Verde'),
+	('cx', 'Christmas Island'),
+	('cy', 'Cyprus'),
+	('cz', 'Czech Republic'),
+	('de', 'Germany'),
+	('dj', 'Djibouti'),
+	('dk', 'Denmark'),
+	('dm', 'Dominica'),
+	('do', 'Dominican Republic'),
+	('dz', 'Algeria'),
+	('ec', 'Ecuador'),
+	('ee', 'Estonia'),
+	('eg', 'Egypt'),
+	('eh', 'Western Sahara'),
+	('er', 'Eritrea'),
+	('es', 'Spain'),
+	('et', 'Ethiopia'),
+	('fi', 'Finland'),
+	('fj', 'Fiji'),
+	('fk', 'Falkland Islands (Ma'),
+	('fm', 'Micronesia, Federate'),
+	('fo', 'Faroe Islands'),
+	('fr', 'France'),
+	('ga', 'Gabon'),
+	('gb', 'United Kingdom'),
+	('gd', 'Grenada'),
+	('ge', 'Georgia'),
+	('gf', 'French Guiana'),
+	('gh', 'Ghana'),
+	('gi', 'Gibraltar'),
+	('gl', 'Greenland'),
+	('gm', 'Gambia'),
+	('gn', 'Guinea'),
+	('gp', 'Guadeloupe'),
+	('gq', 'Equatorial Guinea'),
+	('gr', 'Greece'),
+	('gs', 'South Georgia and th'),
+	('gt', 'Guatemala'),
+	('gu', 'Guam'),
+	('gw', 'Guinea-Bissau'),
+	('gy', 'Guyana'),
+	('hk', 'Hong Kong'),
+	('hm', 'Heard Island and Mcd'),
+	('hn', 'Honduras'),
+	('hr', 'Croatia'),
+	('ht', 'Haiti'),
+	('hu', 'Hungary'),
+	('id', 'Indonesia'),
+	('ie', 'Ireland'),
+	('il', 'Israel'),
+	('in', 'India'),
+	('io', 'British Indian Ocean'),
+	('iq', 'Iraq'),
+	('ir', 'Iran, Islamic Republ'),
+	('is', 'Iceland'),
+	('it', 'Italy'),
+	('jm', 'Jamaica'),
+	('jo', 'Jordan'),
+	('jp', 'Japan'),
+	('ke', 'Kenya'),
+	('kg', 'Kyrgyzstan'),
+	('kh', 'Cambodia'),
+	('ki', 'Kiribati'),
+	('km', 'Comoros'),
+	('kn', 'Saint Kitts and Nevi'),
+	('kp', 'Korea, Democratic Pe'),
+	('kr', 'Korea, Republic of'),
+	('kw', 'Kuwait'),
+	('ky', 'Cayman Islands'),
+	('kz', 'Kazakhstan'),
+	('la', 'Lao People''s Democra'),
+	('lb', 'Lebanon'),
+	('lc', 'Saint Lucia'),
+	('li', 'Liechtenstein'),
+	('lk', 'Sri Lanka'),
+	('lr', 'Liberia'),
+	('ls', 'Lesotho'),
+	('lt', 'Lithuania'),
+	('lu', 'Luxembourg'),
+	('lv', 'Latvia'),
+	('ly', 'Libyan Arab Jamahiri'),
+	('ma', 'Morocco'),
+	('mc', 'Monaco'),
+	('md', 'Moldova, Republic of'),
+	('mg', 'Madagascar'),
+	('mh', 'Marshall Islands'),
+	('mk', 'Macedonia, the Forme'),
+	('ml', 'Mali'),
+	('mm', 'Myanmar'),
+	('mn', 'Mongolia'),
+	('mo', 'Macao'),
+	('mp', 'Northern Mariana Isl'),
+	('mq', 'Martinique'),
+	('mr', 'Mauritania'),
+	('ms', 'Montserrat'),
+	('mt', 'Malta'),
+	('mu', 'Mauritius'),
+	('mv', 'Maldives'),
+	('mw', 'Malawi'),
+	('mx', 'Mexico'),
+	('my', 'Malaysia'),
+	('mz', 'Mozambique'),
+	('na', 'Namibia'),
+	('nc', 'New Caledonia'),
+	('ne', 'Niger'),
+	('nf', 'Norfolk Island'),
+	('ng', 'Nigeria'),
+	('ni', 'Nicaragua'),
+	('nl', 'Netherlands'),
+	('no', 'Norway'),
+	('np', 'Nepal'),
+	('nr', 'Nauru'),
+	('nu', 'Niue'),
+	('nz', 'New Zealand'),
+	('om', 'Oman'),
+	('pa', 'Panama'),
+	('pe', 'Peru'),
+	('pf', 'French Polynesia'),
+	('pg', 'Papua New Guinea'),
+	('ph', 'Philippines'),
+	('pk', 'Pakistan'),
+	('pl', 'Poland'),
+	('pm', 'Saint Pierre and Miq'),
+	('pn', 'Pitcairn'),
+	('pr', 'Puerto Rico'),
+	('ps', 'Palestinian Territor'),
+	('pt', 'Portugal'),
+	('pw', 'Palau'),
+	('py', 'Paraguay'),
+	('qa', 'Qatar'),
+	('re', 'Reunion'),
+	('ro', 'Romania'),
+	('ru', 'Russian Federation'),
+	('rw', 'Rwanda'),
+	('sa', 'Saudi Arabia'),
+	('sb', 'Solomon Islands'),
+	('sc', 'Seychelles'),
+	('sd', 'Sudan'),
+	('se', 'Sweden'),
+	('sg', 'Singapore'),
+	('sh', 'Saint Helena'),
+	('si', 'Slovenia'),
+	('sj', 'Svalbard and Jan May'),
+	('sk', 'Slovakia'),
+	('sl', 'Sierra Leone'),
+	('sm', 'San Marino'),
+	('sn', 'Senegal'),
+	('so', 'Somalia'),
+	('sr', 'Suriname'),
+	('st', 'Sao Tome and Princip'),
+	('sv', 'El Salvador'),
+	('sy', 'Syrian Arab Republic'),
+	('sz', 'Swaziland'),
+	('tc', 'Turks and Caicos Isl'),
+	('td', 'Chad'),
+	('tf', 'French Southern Terr'),
+	('tg', 'Togo'),
+	('th', 'Thailand'),
+	('tj', 'Tajikistan'),
+	('tk', 'Tokelau'),
+	('tl', 'Timor-Leste'),
+	('tm', 'Turkmenistan'),
+	('tn', 'Tunisia'),
+	('to', 'Tonga'),
+	('tr', 'Turkey'),
+	('tt', 'Trinidad and Tobago'),
+	('tv', 'Tuvalu'),
+	('tw', 'Taiwan, Province of '),
+	('tz', 'Tanzania, United Rep'),
+	('ua', 'Ukraine'),
+	('ug', 'Uganda'),
+	('um', 'United States Minor '),
+	('us', 'United States'),
+	('uy', 'Uruguay'),
+	('uz', 'Uzbekistan'),
+	('va', 'Holy See (Vatican Ci'),
+	('vc', 'Saint Vincent and th'),
+	('ve', 'Venezuela'),
+	('vg', 'Virgin Islands, Brit'),
+	('vi', 'Virgin Islands, U.s.'),
+	('vn', 'Viet Nam'),
+	('vu', 'Vanuatu'),
+	('wf', 'Wallis and Futuna'),
+	('ws', 'Samoa'),
+	('ye', 'Yemen'),
+	('yt', 'Mayotte'),
+	('za', 'South Africa'),
+	('zm', 'Zambia'),
+	('zw', 'Zimbabwe');
+
+-- Version 26/09/2011
+
+INSERT INTO `wtvmT_AuthItem` (`name`, `type`, `description`, `bizrule`, `data`) VALUES ('importWebStream', 0, 'Import a list of WebStream', NULL, 'N;');
+INSERT INTO `wtvmT_AuthItemChild` (`parent`, `child`) VALUES ('moderator', 'importWebStream');
+
+-- Version 05/10/2011
+
+CREATE TABLE IF NOT EXISTS wtvmT_Comment (
+	Id INTEGER NOT NULL AUTO_INCREMENT,
+	Comment TEXT NULL,
+	HistoryId INTEGER NOT NULL,
+	CONSTRAINT PK_Comment PRIMARY KEY(Id),
+	CONSTRAINT FK_Comment_History FOREIGN KEY (HistoryId)
+		REFERENCES wtvmT_History(Id)
+) TYPE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS wtvmT_EditRequest (
+	Id INTEGER NOT NULL AUTO_INCREMENT,
+	Status TINYINT NOT NULL,
+	Field TINYINT NOT NULL,
+	OldValue VARCHAR(100) NULL,
+	NewValue VARCHAR(100) NULL,
+	HistoryId INTEGER NOT NULL,
+	CONSTRAINT PK_ChangeRequest PRIMARY KEY(Id),
+	CONSTRAINT FK_ChangeRequest_History FOREIGN KEY (HistoryId)
+		REFERENCES wtvmT_History(Id)
+) TYPE=InnoDB;
+
+-- Version 10/10/2011
+
+CREATE VIEW wtvmV_ISP AS SELECT DISTINCT RequiredISP FROM `wtvmT_WebStream` WHERE RequiredISP IS NOT NULL;
+
+-- Version 18/01/2012
+
+CREATE TABLE IF NOT EXISTS wtvmT_WebStreamRelationType (
+	Code INTEGER NOT NULL AUTO_INCREMENT,
+	Label VARCHAR(50) NOT NULL,
+	Description VARCHAR(50) NOT NULL,
+	ReverseRelationTypeCode INTEGER NULL,
+	CONSTRAINT PK_WebStreamRelationType PRIMARY KEY(Code),
+	CONSTRAINT FK_WebStreamRelationType_ReverseRelationTypeCode FOREIGN KEY (ReverseRelationTypeCode)
+		REFERENCES wtvmT_WebStreamRelationType(Code)
+) TYPE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS wtvmT_WebStreamRelation (
+	WebStreamId1 INTEGER NOT NULL,
+	WebStreamId2 INTEGER NOT NULL,
+	RelationTypeCode INTEGER NOT NULL,
+	CONSTRAINT PK_WebStreamRelation PRIMARY KEY(WebStreamId1, WebStreamId2),
+	CONSTRAINT FK_WebStreamRelation_WebStreamId1 FOREIGN KEY (WebStreamId1)
+		REFERENCES wtvmT_WebStream(Id),
+	CONSTRAINT FK_WebStreamRelation_WebStreamId2 FOREIGN KEY (WebStreamId2)
+		REFERENCES wtvmT_WebStream(Id),
+	CONSTRAINT FK_WebStreamRelation_RelationTypeCode FOREIGN KEY (RelationTypeCode)
+		REFERENCES wtvmT_WebStreamRelationType(Code)
+) TYPE=InnoDB;
+
+INSERT INTO wtvmT_WebStreamRelationType (Code, Label, Description) VALUES
+	(1, 'Alternative', 'is alternative for'),
+	(2, 'Replacement', 'replace'),
+	(3, 'Replacement', 'is replaced by'),
+	(4, 'Groups', 'is same group than');
+
+UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 1 WHERE Code = 1;
+UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 3 WHERE Code = 2;
+UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 2 WHERE Code = 3;
+UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 4 WHERE Code = 4;
+
+-- Version 17/06/2012
+
+ALTER TABLE wtvmT_EditRequest ADD COLUMN UpdateHistoryId INTEGER NULL;
+ALTER TABLE wtvmT_EditRequest ADD CONSTRAINT FK_EditRequest_UpdateHistoryId FOREIGN KEY (UpdateHistoryId) REFERENCES wtvmT_History(Id);
+

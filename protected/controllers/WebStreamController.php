@@ -6,7 +6,7 @@ class WebStreamController extends Controller
 	 * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
 	 * using two-column layout. See 'protected/views/layouts/column2.php'.
 	 */
-	public $layout='//layouts/column1';
+	public $layout='//layouts/column2';
 
 	/**
 	 * @var CActiveRecord the currently loaded data model instance.
@@ -32,16 +32,20 @@ class WebStreamController extends Controller
 	{
 		return array(
 			array('allow',  // allow all users to perform 'index' and 'view' actions
-				'actions'=>array('index','view','send', 'add'),
+				'actions'=>array('index','view'),
 				'users'=>array('*'),
 			),
-			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('create'),
-				'users'=>array('@'),
+			array('allow',
+				'actions'=>array('send', 'editrequest'),
+				'roles'=>array('sendWebStream'),
 			),
-			array('allow', // allow admin user to perform 'admin' and 'delete' actions
-				'actions'=>array('admin','delete','update'),
-				'users'=>array('admin'),
+			array('allow',
+				'actions'=>array('update', 'updateEditRequest'),
+				'roles'=>array('editWebStream'),
+			),
+			array('allow',
+				'actions'=>array('changestatus'),
+				'roles'=>array('changeStatusWebStream'),
 			),
 			array('deny',  // deny all users
 				'users'=>array('*'),
@@ -54,56 +58,50 @@ class WebStreamController extends Controller
 	 */
 	public function actionView()
 	{
-		$this->render('view',array(
-			'model'=>$this->loadModel(),
-		));
-	}
+		$model = $this->loadModel();
 
-	/**
-	 * Creates a new model.
-	 * If creation is successful, the browser will be redirected to the 'view' page.
-	 */
-	public function actionAdd()
-	{
-		$model=new WebStream;
-
-		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
-
-		if(isset($_POST['WebStream']))
-		{
-			$model->attributes=$_POST['WebStream'];
-			if($model->LangCode==""){
-				$model->LangCode=null;
-			}
-			if($model->save()){
-				$this->redirect(array('view','id'=>$model->Id));
-			}
-		}
+		$conditions = "";
+		$params = array();	
 		
+		$dataHistory=new CArrayDataProvider($model->Histories, array('keyField'=>'Id'));
+		$dataEditRequests=new CArrayDataProvider($model->EditRequests, array('keyField'=>'Id'));
+
+		$this->render('view', array(
+			'model'=>$model,
+			'dataHistory'=>$dataHistory,
+			'dataEditRequests'=>$dataEditRequests,
+		));
 	}
 
-	/**
-	 * Creates a new model.
-	 * If creation is successful, the browser will be redirected to the 'view' page.
-	 */
-	public function actionCreate()
+	public function updateWebStream($model, $saveModel, $action, $actionDetails, $editRequest, $comment)
 	{
-		$model=new WebStream;
+		if(!$saveModel || $model->save()){
+			$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, $action, $model->Id, $actionDetails);
+			if($history->save()){
+				if($editRequest != null){
+					if($editRequest->HistoryId == null){
+						$editRequest->HistoryId = $history->Id;
+					}else if($editRequest->UpdateHistoryId == null){
+						$editRequest->UpdateHistoryId = $history->Id;
+					}
+					if(!$editRequest->save()){
+						throw new CException("Error when saving the edit request");
+					}
+				}
 
-		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
-
-		if(isset($_POST['WebStream']))
-		{
-			$model->attributes=$_POST['WebStream'];
-			if($model->save())
-				$this->redirect(array('view','id'=>$model->Id));
+				if($comment != null){
+					$comment->HistoryId = $history->Id;
+					if(!$comment->save()){
+						throw new CException("Error when saving the comment");
+					}
+				}
+			}else{
+				throw new CException("Error when saving the history");
+			}
+		}else{
+			throw new CException("Error when saving the history");
 		}
-
-		$this->render('create',array(
-			'model'=>$model,
-		));
+		return true;
 	}
 
 	/**
@@ -114,19 +112,203 @@ class WebStreamController extends Controller
 	{
 		$model=$this->loadModel();
 
-		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
-
 		if(isset($_POST['WebStream']))
 		{
+			$actionDetails = $model->getModelDiffMsg($_POST['WebStream']);
+
 			$model->attributes=$_POST['WebStream'];
-			if($model->save())
-				$this->redirect(array('view','id'=>$model->Id));
+			if($model->LangCode==""){
+				$model->LangCode=null;
+			}
+			if($model->CountryCode==""){
+				$model->CountryCode=null;
+			}
+			if($model->RequiredIsp==""){
+				$model->RequiredIsp=null;
+			}
+
+			if($model->save()){
+				if($actionDetails != ""){
+					$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_EDIT, $model->Id, $actionDetails);
+					if($history->save()){
+						$this->redirect(array('view','id'=>$model->Id));
+					}
+				}else{
+					$this->redirect(array('view','id'=>$model->Id));
+				}
+			}
 		}
 
 		$this->render('update',array(
 			'model'=>$model,
 		));
+	}
+
+	/**
+	 * Updates a particular model.
+	 * If update is successful, the browser will be redirected to the 'view' page.
+	 */
+	public function actionEditRequest()
+	{
+		$model=$this->loadModel();
+
+		$action = null;
+
+		if(isset($_POST['Action']))
+		{
+			$action = $_POST['Action'];
+			$modelChange = array();
+			$comment = null;
+			$editRequest = new EditRequest;
+
+			$editRequest->Field = EditRequest::FIELD_WEBSTREAM_STATUS;
+
+			if($action == 'ReportDeadLink'){
+				$modelChange['StreamStatusCode'] = StreamStatus::STREAM_STATUS_DEAD;
+				$editRequest->OldValue = $model->StreamStatusCode;
+				$editRequest->NewValue = StreamStatus::STREAM_STATUS_DEAD;
+			}
+			$actionDetails = $model->getModelDiffMsg($modelChange);
+
+			if(isset($_POST['Comments']) && $_POST['Comments'] != ""){
+				$comment = new Comment;
+				$comment->Comment = $_POST['Comments'];
+			}
+
+			$transaction=$model->dbConnection->beginTransaction();
+			try
+			{
+				$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_EDITREQUEST, $model->Id, $actionDetails);
+				if($history->save()){
+					$editRequest->HistoryId = $history->Id;
+					if(!$editRequest->save()){
+						throw new CException("Error when saving the edit request");
+					}
+
+					if($comment != null){
+						$comment->HistoryId = $history->Id;
+						if(!$comment->save()){
+							throw new CException("Error when saving the comment");
+						}
+					}
+				}else{
+					throw new CException("Error when saving the history");
+				}
+				$transaction->commit();
+
+				// Send a link to admin
+				$link = Yii::app()->getRequest()->getHostInfo().Yii::app()->createUrl("WebStream/view", array("id" => $model->Id));
+				$subject = Yii::app()->name.' - New WebStream change request';
+				$message = 'A new WebStream change request has been submitted by an user :<br><br>';
+				$message .= '<u>Name :</u> '.$model->Name.'<br>';
+				$message .= '<u>Url :</u> <a href="'.$model->Url.'">'.$model->Url.'</a><br>';
+				$message .= '<br>';
+				$message .= 'Click here to view the details of the request : <a href="'.$link.'">'.$link.'</a><br>';
+
+				$this->sendMailToAdmin($subject, $message);
+
+				$this->redirect(array('view','id'=>$model->Id));
+
+			} catch(Exception $e) {
+				$transaction->rollBack();
+				throw new CHttpException(400, $e->getMessage());
+			}
+		}
+		else
+			throw new CHttpException(400,'Invalid request. Please do not repeat this request again.');
+	}
+
+	/**
+	 * Updates a particular model.
+	 * If update is successful, the browser will be redirected to the 'view' page.
+	 */
+	public function actionChangeStatus()
+	{
+		$model=$this->loadModel();
+
+		if(isset($_POST['WebStream']))
+		{
+			$oldStreamStatusCode = $model->StreamStatusCode;
+			$oldStreamStatusLabel = $model->StreamStatus->Label;
+
+			$model->attributes=$_POST['WebStream'];
+			if($oldStreamStatusCode != $model->StreamStatusCode){
+				
+				$transaction=$model->dbConnection->beginTransaction();
+				try
+				{
+					$newStreamStatus=StreamStatus::model()->findbyPk($model->StreamStatusCode);
+					$actionDetails = $oldStreamStatusLabel.' => '.$newStreamStatus->Label;
+					$res = $this->updateWebStream($model, true, History::ACTIONTYPE_WEBSTREAM_CHANGESTATUS, $actionDetails, null, null);
+					if($res){
+						$transaction->commit();
+					}else{
+						throw new CException("Error when saving the web stream");
+					}
+				} catch(Exception $e) {
+					$transaction->rollBack();
+					throw new CHttpException(400, $e->getMessage());
+				}
+			}
+			$this->redirect(array('view','id'=>$model->Id));
+		}
+
+		$this->render('changestatus',array(
+			'model'=>$model,
+		));
+	}
+
+	public function actionUpdateEditRequest()
+	{
+		if(isset($_GET["edit_id"]) && isset($_GET["status"])){
+			$model=$this->loadModel();
+			$modelEditRequest=EditRequest::model()->findbyPk($_GET["edit_id"]);
+
+			$transaction=$model->dbConnection->beginTransaction();
+			try
+			{
+				$update = false;
+				$action = History::ACTIONTYPE_WEBSTREAM_EDITREQUESTREJECT;
+				if($_GET["status"] == "accept"){
+					$modelEditRequest->Status = EditRequest::FIELD_STATUS_APPROVED;
+					$update=true;
+				}else if($_GET["status"] == "reject"){
+					$modelEditRequest->Status = EditRequest::FIELD_STATUS_REJECTED;
+				}else{
+					throw new CException("Invalid request");
+				}
+
+				if($update){
+					switch($modelEditRequest->Field){
+					case EditRequest::FIELD_WEBSTREAM_STATUS:
+						$modelChange['StreamStatusCode'] = $modelEditRequest->NewValue;
+						$action = History::ACTIONTYPE_WEBSTREAM_CHANGESTATUS;
+						break;
+					default:
+						throw new CException("Invalid request");
+					}
+		
+					$actionDetails = $model->getModelDiffMsg($modelChange);
+					$model->attributes=$modelChange;
+				}else{
+					$actionDetails = "";
+				}
+
+				$res = $this->updateWebStream($model, $update, $action, $actionDetails, $modelEditRequest, null);
+				if($res){
+					$transaction->commit();
+				}else{
+					throw new CException("Error when saving the web stream");
+				}
+
+				$this->redirect(array('view','id'=>$model->Id));
+			} catch(Exception $e) {
+				$transaction->rollBack();
+				throw new CHttpException(400, $e->getMessage());
+			}
+				
+		}else
+			throw new CHttpException(400,'Invalid request. Please do not repeat this request again.');
 	}
 
 	/**
@@ -153,34 +335,101 @@ class WebStreamController extends Controller
 	 */
 	public function actionIndex()
 	{
-		$conditions = "";
-		$params = array();
-		if(isset($_GET['WebStreamName'])){
-			$conditions = "Name LIKE :WebStreamName";
-			$params[':WebStreamName'] = '%'.$_GET['WebStreamName'].'%';
+		$modelSearchForm = new WebStreamSearchForm;
+
+		// collect user input data
+		if(isset($_GET['WebStreamSearchForm']))
+		{
+			$modelSearchForm->attributes=$_GET['WebStreamSearchForm'];
 		}
-		if(isset($_GET['WebStreamStatus'])){
-			if($_GET['WebStreamStatus'] != "all" && $_GET['WebStreamStatus'] != ""){
-				if($conditions != ""){
-					$conditions .= " AND ";
-				}
-				$conditions .= " StreamStatusCode=:WebStreamStatus";
-				$params[':WebStreamStatus'] = $_GET['WebStreamStatus'];
+		
+		$distinct = false;
+		$conditions = "";
+		$join = "";
+		$params = array();
+		$playlist_params = array();
+
+		// Security
+		$conditions .= " StreamStatusCode NOT IN (SELECT Code FROM wtvmT_StreamStatus WHERE Searchable=0) "; // Remove forbidden link
+
+		if(isset($modelSearchForm->Name)){
+			$conditions .= " AND Name LIKE :WebStreamName";
+			$params[':WebStreamName'] = '%'.$modelSearchForm->Name.'%';
+			if($modelSearchForm->Name != ""){
+				$playlist_params["name"] = $modelSearchForm->Name;
 			}
 		}
-		if(isset($_GET['WebStreamLang'])){
-			if($_GET['WebStreamLang'] != "all" && $_GET['WebStreamLang'] != ""){
-				if($conditions != ""){
-					$conditions .= " AND ";
+		if(isset($modelSearchForm->Type)){
+			if($modelSearchForm->Type != ""){
+				$conditions .= " AND TypeStream=:WebStreamType";
+				$params[':WebStreamType'] = $modelSearchForm->Type;
+				$playlist_params["type"] = $modelSearchForm->Type;
+			}
+		}
+		if(isset($modelSearchForm->Status)){
+			if($modelSearchForm->Status != ""){
+				$conditions .= " AND StreamStatusCode=:WebStreamStatus";
+				$params[':WebStreamStatus'] = $modelSearchForm->Status;
+				$playlist_params["status"] = $modelSearchForm->Status;
+			}
+		}
+		if(isset($modelSearchForm->Language)){
+			if($modelSearchForm->Language != ""){
+				if($modelSearchForm->Language == "none"){
+					$conditions .= " AND LangCode IS NULL";
+					$playlist_params["lng"] = $modelSearchForm->Language;
+				}else{
+					$conditions .= " AND LangCode=:WebStreamLang";
+					$params[':WebStreamLang'] = $modelSearchForm->Language;
+					$playlist_params["lng"] = $modelSearchForm->Language;
 				}
-				$conditions .= " LangCode=:WebStreamLang";
-				$params[':WebStreamLang'] = $_GET['WebStreamLang'];
+			}
+		}
+
+		if(isset($modelSearchForm->Country)){
+			if($modelSearchForm->Country != ""){
+				if($modelSearchForm->Country == "none"){
+					$conditions .= " AND CountryCode IS NULL";
+					$playlist_params["country"] = $modelSearchForm->Country;
+				}else{
+					$conditions .= " AND CountryCode=:WebStreamCountryCode";
+					$params[':WebStreamCountryCode'] = $modelSearchForm->Country;
+					$playlist_params["country"] = $modelSearchForm->Country;
+				}
+			}
+		}
+
+		if(isset($modelSearchForm->RequiredISP)){
+			if($modelSearchForm->RequiredISP != ""){
+				if($modelSearchForm->RequiredISP == "all"){
+					$playlist_params["isp"] = $modelSearchForm->RequiredISP;
+				}else{
+					$conditions .= " AND RequiredISP=:WebStreamRequiredISP";
+					$params[':WebStreamRequiredISP'] = $modelSearchForm->RequiredISP;
+					$playlist_params["isp"] = $modelSearchForm->RequiredISP;
+				}
+			}else{
+				$conditions .= " AND RequiredISP IS NULL";
+				$playlist_params["isp"] = $modelSearchForm->RequiredISP;
+			}
+		}
+
+		if(isset($modelSearchForm->EditPending)){
+			if($modelSearchForm->EditPending != ""){
+				if($modelSearchForm->EditPending == true){
+					$join='INNER JOIN wtvmT_History ON wtvmT_History.EntityType='.History::ENTITYTYPE_WEBSTREAM.' AND WebStream.Id=wtvmT_History.EntityId
+						INNER JOIN wtvmT_EditRequest ON wtvmT_History.Id=wtvmT_EditRequest.HistoryId AND Status='.EditRequest::FIELD_STATUS_SUBMITTED;
+					$distinct = true;
+				}
 			}
 		}
 
 		$dataProvider=new CActiveDataProvider('WebStream',array(
 			'criteria'=>array(
+				'alias'=>"WebStream",
+				'distinct' => $distinct,
 				'condition'=>$conditions,
+				'join'=>$join,
 				'params'=>$params,
 				'order'=>'Name',
 			),
@@ -190,7 +439,9 @@ class WebStreamController extends Controller
 		));
 
 		$this->render('index',array(
+			'modelSearchForm'=>$modelSearchForm,
 			'dataProvider'=>$dataProvider,
+			'playlist_params'=>$playlist_params,
 		));
 	}
 
@@ -199,25 +450,70 @@ class WebStreamController extends Controller
 	 */
 	public function actionSend()
 	{
-		$conditions = "";
-		$params = array();
-		$conditions = "Url=:WebStreamUrl";
-		$params[':WebStreamUrl'] = $_GET['WebStreamUrl'];
+		$bRes = false;
+		$model=new WebStream;
+		$modelSendForm = new WebStreamSendForm;
 
-		$dataProvider=new CActiveDataProvider('WebStream',array(
-			'criteria'=>array(
-				'condition'=>$conditions,
-				'params'=>$params,
-				'order'=>'Name DESC',
-			),
-			'pagination'=>array(
-				'pageSize'=>20,
-			),
-		));
+		if(isset($_POST['WebStream']))
+		{
+			$model->attributes=$_POST['WebStream'];
+			if($model->LangCode==""){
+				$model->LangCode=null;
+			}
+			if($model->CountryCode==""){
+				$model->CountryCode=null;
+			}
+			if($model->RequiredIsp==""){
+				$model->RequiredIsp=null;
+			}
+			$modelSendForm->Url = $model->Url;
+			if($model->save()){
+				$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_ADD, $model->Id);
+				if($history->save()){
 
-		$this->render('send',array(
-			'dataProvider'=>$dataProvider,
-		));
+					// Send a mail to the admin
+					$link = Yii::app()->getRequest()->getHostInfo().Yii::app()->createUrl("WebStream/view", array("id" => $model->Id));
+					$subject = Yii::app()->name.' - New WebStream submitted';
+					$message = 'A new WebStream has been submitted by an user :<br><br>';
+					$message .= '<u>Name :</u> '.$model->Name.'<br>';
+					$message .= '<u>Url :</u> <a href="'.$model->Url.'">'.$model->Url.'</a><br>';
+					$message .= '<br>';
+					$message .= 'Click here to view the details of the WebStream : <a href="'.$link.'">'.$link.'</a><br>';
+
+					$this->sendMailToAdmin($subject, $message);
+
+					$this->redirect(array('view','id'=>$model->Id));
+					$bRes = true;
+				}
+			}
+		}else{
+			$modelSendForm->Url = $_GET['WebStreamUrl'];
+			$model->Url = $_GET['WebStreamUrl'];
+		}
+		
+		if(!$bRes){
+			$conditions = "";
+			$params = array();
+			$params[':WebStreamUrl'] = $model->Url;
+			$conditions = "Url=:WebStreamUrl";
+
+			$dataProvider=new CActiveDataProvider('WebStream',array(
+				'criteria'=>array(
+					'condition'=>$conditions,
+					'params'=>$params,
+					'order'=>'Name DESC',
+				),
+				'pagination'=>array(
+					'pageSize'=>20,
+				),
+			));
+
+			$this->render('send',array(
+				'dataProvider'=>$dataProvider,
+				'model'=>$model,
+				'modelSendForm'=>$modelSendForm,
+			));
+		}
 	}
 
 	/**
@@ -262,5 +558,23 @@ class WebStreamController extends Controller
 			echo CActiveForm::validate($model);
 			Yii::app()->end();
 		}
+	}
+
+	protected function sendMailToAdmin($subject, $message)
+	{
+		if(Yii::app()->params['UseSMTP']){
+			Yii::app()->mailer->IsSMTP();
+			Yii::app()->mailer->Host = Yii::app()->params['SMTPHost'];
+			Yii::app()->mailer->Username = Yii::app()->params['SMTPUsername'];
+			Yii::app()->mailer->Password = Yii::app()->params['SMTPPassword'];
+		}else{
+			Yii::app()->mailer->IsSendMail();
+		}
+		Yii::app()->mailer->From = Yii::app()->params['appEmail'];
+		Yii::app()->mailer->FromName = Yii::app()->params['appAuthor'];
+		Yii::app()->mailer->AddAddress(Yii::app()->params['adminEmail']);
+		Yii::app()->mailer->Subject = $subject;
+		Yii::app()->mailer->MsgHTML($message);
+		Yii::app()->mailer->Send();
 	}
 }

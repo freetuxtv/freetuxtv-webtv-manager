@@ -25,16 +25,18 @@ return array(
 			'allowAutoLogin'=>true,
 		),
 		// uncomment the following to enable URLs in path-format
-		/*
 		'urlManager'=>array(
 			'urlFormat'=>'path',
 			'rules'=>array(
+				'playlists/playlist\.m3u'=>'Playlist/index',
+				'playlists/playlist_<type:\w+>_<lng:\w+>\.m3u'=>'Playlist/index',
+				'playlists/list'=>'Playlist/list',
 				'<controller:\w+>/<id:\d+>'=>'<controller>/view',
 				'<controller:\w+>/<action:\w+>/<id:\d+>'=>'<controller>/<action>',
 				'<controller:\w+>/<action:\w+>'=>'<controller>/<action>',
 			),
+			'showScriptName'=>false,
 		),
-		*/
 		/*
 		'db'=>array(
 			'connectionString' => 'sqlite:'.dirname(__FILE__).'/../data/testdrive.db',
@@ -47,6 +49,14 @@ return array(
 			'password' => 'mysql',
 			'charset' => 'utf8',
 		),
+		'authManager'=>array(
+			'class'=>'CDbAuthManager',
+			'connectionID'=>'db',
+			'itemTable'=>'wtvmT_AuthItem',
+			'itemChildTable'=>'wtvmT_AuthItemChild',
+			'assignmentTable'=>'wtvmT_AuthAssignment',
+			'defaultRoles'=>array('guest'),
+        ),
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors
             'errorAction'=>'site/error',
@@ -66,6 +76,11 @@ return array(
 				*/
 			),
 		),
+		'mailer' => array(
+      		'class' => 'application.extensions.mailer.EMailer',
+      		'pathViews' => 'application.views.email',
+      		'pathLayouts' => 'application.views.email.layouts',
+   ),
 	),
 
 	// application-level parameters that can be accessed
@@ -73,5 +88,10 @@ return array(
 	'params'=>array(
 		// this is used in contact page
 		'adminEmail'=>'admin@mail.com',
+		'appAuthor'=>'FreetuxTV WebTV Manager',
+		'appEmail'=>'sender@mail.com',
+		'SMTPHost'=>'smtp.mail.com',
+		'SMTPUsername'=>'sender@mail.com',
+		'SMTPPassword'=>'password',
 	),
 );
