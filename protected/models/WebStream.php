@@ -44,7 +44,7 @@ class WebStream extends CActiveRecord
 		return array(
             array('Name, Url, TypeStream, StreamStatusCode', 'required'),
 			array('Name', 'length', 'max'=>100),
-			array('Url', 'length', 'max'=>255),
+			array('Url', 'url', 'allowEmpty'=>false, 'defaultScheme'=>null, 'validSchemes'=>array('http', 'https', 'mms', 'mmsh', 'rtsp', 'rtmp')),
             array('RequiredIsp', 'length', 'max'=>50),
             array('LangCode', 'length', 'max'=>2),
             array('CountryCode', 'length', 'max'=>2),
