@@ -178,7 +178,16 @@ class WebStreamController extends Controller
 			$transaction=$model->dbConnection->beginTransaction();
 			try
 			{
+				// Check if IP is blacklisted
+				$userHostAddress = Yii::app()->getRequest()->getUserHostAddress();
+				$result = BlackListedIP::model()->find(array('condition'=>"'$userHostAddress' LIKE IpAddress"));
+				if($result!==null){
+					throw new CHttpException(403, "Your IP Adress has been black listed");
+				}
+
 				$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_EDITREQUEST, $model->Id, $actionDetails);
+				$history->RemoteAddr=$userHostAddress;
+
 				if($history->save()){
 					$editRequest->HistoryId = $history->Id;
 					if(!$editRequest->save()){
@@ -453,6 +462,14 @@ class WebStreamController extends Controller
 		$bRes = false;
 		$model=new WebStream;
 		$modelSendForm = new WebStreamSendForm;
+
+
+		// Check if IP is blacklisted
+		$userHostAddress = Yii::app()->getRequest()->getUserHostAddress();
+		$result = BlackListedIP::model()->find(array('condition'=>"'$userHostAddress' LIKE IpAddress"));
+		if($result!==null){
+			throw new CHttpException(403, "Your IP Adress has been black listed");
+		}
 
 		if(isset($_POST['WebStream']))
 		{

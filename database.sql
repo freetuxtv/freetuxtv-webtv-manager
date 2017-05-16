@@ -638,3 +638,13 @@ UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 4 WHERE Code = 
 ALTER TABLE wtvmT_EditRequest ADD COLUMN UpdateHistoryId INTEGER NULL;
 ALTER TABLE wtvmT_EditRequest ADD CONSTRAINT FK_EditRequest_UpdateHistoryId FOREIGN KEY (UpdateHistoryId) REFERENCES wtvmT_History(Id);
 
+-- Version 29/02/2017
+
+CREATE TABLE IF NOT EXISTS wtvmT_BlackListedIP (
+	Id INTEGER NOT NULL AUTO_INCREMENT,
+	IpAddress VARCHAR(40) NOT NULL,
+	CONSTRAINT PK_BlackListedIP PRIMARY KEY(Id)
+) TYPE=InnoDB;
+
+ALTER TABLE wtvmT_BlackListedIP ADD COLUMN Date DATETIME NOT NULL;
+
