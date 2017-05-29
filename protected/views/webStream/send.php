@@ -136,6 +136,12 @@ Please complete the following information about the link before sending it :
 			echo $form->error($model,'CountryCode');
 		?>
 	</div>
+	<div class="row">
+		<label>Check</label>
+		<div style="display:inline-block">
+   		<div class="g-recaptcha" data-sitekey="<?php echo Yii::app()->params['recaptcha-site-key'] ?>"></div>
+		</div>
+	</div>
 
 	<?php
 		if(Yii::app()->user->isGuest){

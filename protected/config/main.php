@@ -93,5 +93,7 @@ return array(
 		'SMTPHost'=>'smtp.mail.com',
 		'SMTPUsername'=>'sender@mail.com',
 		'SMTPPassword'=>'password',
+		'recaptcha-site-key'=>'',
+		'recaptcha-secret-key'=>'',
 	),
 );

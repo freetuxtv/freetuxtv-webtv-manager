@@ -52,6 +52,10 @@
 		<?php echo CHtml::textArea('Comments', '', array('cols'=>80,'rows'=>10)); ?>
 	</div>
 
+	<div class="row">
+   		<div class="g-recaptcha" data-sitekey="<?php echo Yii::app()->params['recaptcha-site-key'] ?>"></div>
+	</div>
+
 
 	<div class="row buttons">
 		<?php echo CHtml::submitButton('Submit change request'); ?>

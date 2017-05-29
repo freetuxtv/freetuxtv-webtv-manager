@@ -62,6 +62,9 @@ class WebStreamController extends Controller
 
 		$conditions = "";
 		$params = array();	
+
+		// Add recaptcha
+		$this->addCaptchaLibJS();
 		
 		$dataHistory=new CArrayDataProvider($model->Histories, array('keyField'=>'Id'));
 		$dataEditRequests=new CArrayDataProvider($model->EditRequests, array('keyField'=>'Id'));
@@ -183,6 +186,11 @@ class WebStreamController extends Controller
 				$result = BlackListedIP::model()->find(array('condition'=>"'$userHostAddress' LIKE IpAddress"));
 				if($result!==null){
 					throw new CHttpException(403, "Your IP Adress has been black listed");
+				}
+
+				// Verify captcha
+				if(!$this->verifyCaptcha()){
+					throw new CHttpException(403, "Invalid captcha verification");
 				}
 
 				$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_EDITREQUEST, $model->Id, $actionDetails);
@@ -454,6 +462,28 @@ class WebStreamController extends Controller
 		));
 	}
 
+	public function addCaptchaLibJS()
+	{
+		Yii::app()->clientScript->registerScriptFile(
+        	'https://www.google.com/recaptcha/api.js',
+    		CClientScript::POS_HEAD
+    	);
+	}
+
+	public function verifyCaptcha()
+	{
+		$userIP = $_SERVER["REMOTE_ADDR"];
+		$recaptchaResponse = $_POST['g-recaptcha-response'];
+		$secretKey = Yii::app()->params['recaptcha-secret-key'];
+		$request = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$secretKey}&response={$recaptchaResponse}&remoteip={$userIP}");
+
+		if(!strstr($request, "true")){
+			return false;
+		}else{
+			return true;
+		}
+	}
+
 	/**
 	 * Send a new URL.
 	 */
@@ -471,6 +501,9 @@ class WebStreamController extends Controller
 			throw new CHttpException(403, "Your IP Adress has been black listed");
 		}
 
+		// Add recaptcha
+		$this->addCaptchaLibJS();
+
 		if(isset($_POST['WebStream']))
 		{
 			$model->attributes=$_POST['WebStream'];
@@ -484,6 +517,9 @@ class WebStreamController extends Controller
 				$model->RequiredIsp=null;
 			}
 			$modelSendForm->Url = $model->Url;
+			if(!$this->verifyCaptcha()){
+				throw new CHttpException(403, "Invalid captcha verification");
+			}
 			if($model->save()){
 				$history = History::createNew(History::ENTITYTYPE_WEBSTREAM, History::ACTIONTYPE_WEBSTREAM_ADD, $model->Id);
 				if($history->save()){
