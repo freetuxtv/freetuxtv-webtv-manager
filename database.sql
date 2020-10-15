@@ -98,7 +98,9 @@ INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Bislama', 'bi');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Bengali/Bangla', 'bn');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Tibetan', 'bo');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Breton', 'br');
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Bosnian', 'bs');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Catalan', 'ca');
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Corsican', 'co');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Czech', 'cs');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Welsh', 'cy');
@@ -373,7 +375,6 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('cn', 'China'),
 	('co', 'Colombia'),
 	('cr', 'Costa Rica'),
-	('cs', 'Serbia and Montenegr'),
 	('cu', 'Cuba'),
 	('cv', 'Cape Verde'),
 	('cx', 'Christmas Island'),
@@ -459,9 +460,10 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('ma', 'Morocco'),
 	('mc', 'Monaco'),
 	('md', 'Moldova, Republic of'),
+	('me', 'Montenegro'),
 	('mg', 'Madagascar'),
 	('mh', 'Marshall Islands'),
-	('mk', 'Macedonia, the Forme'),
+	('mk', 'North Macedonia'),
 	('ml', 'Mali'),
 	('mm', 'Myanmar'),
 	('mn', 'Mongolia'),
@@ -507,6 +509,7 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('qa', 'Qatar'),
 	('re', 'Reunion'),
 	('ro', 'Romania'),
+	('rs', 'Serbia'),
 	('ru', 'Russian Federation'),
 	('rw', 'Rwanda'),
 	('sa', 'Saudi Arabia'),
