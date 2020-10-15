@@ -180,7 +180,7 @@ INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Russian', 'ru');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Kinyarwanda', 'rw');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Sanskrit', 'sa');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Sindhi', 'sd');
-INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Sangro', 'sg');
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Sangro', 'sg');-- Version 18/01/2012
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Serbo-Croatian', 'sh');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Singhalese', 'si');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Slovak', 'sk');
@@ -375,6 +375,7 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('cn', 'China'),
 	('co', 'Colombia'),
 	('cr', 'Costa Rica'),
+	('cs', 'Serbia and Montenegr'),
 	('cu', 'Cuba'),
 	('cv', 'Cape Verde'),
 	('cx', 'Christmas Island'),
@@ -463,7 +464,7 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('me', 'Montenegro'),
 	('mg', 'Madagascar'),
 	('mh', 'Marshall Islands'),
-	('mk', 'North Macedonia'),
+	('mk', 'Macedonia, the Forme'),
 	('ml', 'Mali'),
 	('mm', 'Myanmar'),
 	('mn', 'Mongolia'),
@@ -650,4 +651,15 @@ CREATE TABLE IF NOT EXISTS wtvmT_BlackListedIP (
 ) TYPE=InnoDB;
 
 ALTER TABLE wtvmT_BlackListedIP ADD COLUMN Date DATETIME NOT NULL;
+
+-- Version 15/10/2020
+
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Bosnian', 'bs');
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
+
+UPDATE wtvmT_Country SET Label='North Macedonia' WHERE Code = 'mk';
+INSERT INTO wtvmT_Country (Code, Label)  VALUES ('rs', 'Serbia');
+
+-- UPDATE wtvmT_WebStream SET CountryCode = 'rs' WHERE CountryCode = 'cs';
+-- DELETE FROM wtvmT_Country WHERE Code = 'cs';
 
