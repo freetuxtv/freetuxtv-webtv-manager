@@ -660,6 +660,6 @@ INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
 UPDATE wtvmT_Country SET Label='North Macedonia' WHERE Code = 'mk';
 INSERT INTO wtvmT_Country (Code, Label)  VALUES ('rs', 'Serbia');
 
--- UPDATE wtvmT_WebStream SET CountryCode = 'rs' WHERE CountryCode = 'cs';
--- DELETE FROM wtvmT_Country WHERE Code = 'cs';
+UPDATE wtvmT_WebStream SET CountryCode = 'rs' WHERE CountryCode = 'cs';
+DELETE FROM wtvmT_Country WHERE Code = 'cs';
 
