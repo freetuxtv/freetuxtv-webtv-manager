@@ -660,6 +660,16 @@ INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
 UPDATE wtvmT_Country SET Label='North Macedonia' WHERE Code = 'mk';
 INSERT INTO wtvmT_Country (Code, Label)  VALUES ('rs', 'Serbia');
 
+-- Version 02/11/2020
+
 UPDATE wtvmT_WebStream SET CountryCode = 'rs' WHERE CountryCode = 'cs';
 DELETE FROM wtvmT_Country WHERE Code = 'cs';
+
+
+-- Version 03/11/2020
+
+
+ALTER TABLE wtvmT_Comment DROP FOREIGN KEY FK_Comment_History;
+ALTER TABLE wtvmT_Comment ADD CONSTRAINT FK_Comment_History FOREIGN KEY (HistoryId) REFERENCES wtvmT_History(Id) ON DELETE CASCADE;
+
 
