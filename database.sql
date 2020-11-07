@@ -569,12 +569,12 @@ INSERT INTO `wtvmT_Country` (`Code`, `Label`) VALUES
 	('zm', 'Zambia'),
 	('zw', 'Zimbabwe');
 
--- Version 26/09/2011
+-- Version 2011-09-26
 
 INSERT INTO `wtvmT_AuthItem` (`name`, `type`, `description`, `bizrule`, `data`) VALUES ('importWebStream', 0, 'Import a list of WebStream', NULL, 'N;');
 INSERT INTO `wtvmT_AuthItemChild` (`parent`, `child`) VALUES ('moderator', 'importWebStream');
 
--- Version 05/10/2011
+-- Version 2011-10-05
 
 CREATE TABLE IF NOT EXISTS wtvmT_Comment (
 	Id INTEGER NOT NULL AUTO_INCREMENT,
@@ -597,11 +597,11 @@ CREATE TABLE IF NOT EXISTS wtvmT_EditRequest (
 		REFERENCES wtvmT_History(Id)
 ) TYPE=InnoDB;
 
--- Version 10/10/2011
+-- Version 2011-10-10
 
 CREATE VIEW wtvmV_ISP AS SELECT DISTINCT RequiredISP FROM `wtvmT_WebStream` WHERE RequiredISP IS NOT NULL;
 
--- Version 18/01/2012
+-- Version 2012-18-01
 
 CREATE TABLE IF NOT EXISTS wtvmT_WebStreamRelationType (
 	Code INTEGER NOT NULL AUTO_INCREMENT,
@@ -637,12 +637,12 @@ UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 3 WHERE Code = 
 UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 2 WHERE Code = 3;
 UPDATE wtvmT_WebStreamRelationType SET ReverseRelationTypeCode = 4 WHERE Code = 4;
 
--- Version 17/06/2012
+-- Version 2012-06-17
 
 ALTER TABLE wtvmT_EditRequest ADD COLUMN UpdateHistoryId INTEGER NULL;
 ALTER TABLE wtvmT_EditRequest ADD CONSTRAINT FK_EditRequest_UpdateHistoryId FOREIGN KEY (UpdateHistoryId) REFERENCES wtvmT_History(Id);
 
--- Version 29/02/2017
+-- Version 2017-02-29
 
 CREATE TABLE IF NOT EXISTS wtvmT_BlackListedIP (
 	Id INTEGER NOT NULL AUTO_INCREMENT,
@@ -652,7 +652,7 @@ CREATE TABLE IF NOT EXISTS wtvmT_BlackListedIP (
 
 ALTER TABLE wtvmT_BlackListedIP ADD COLUMN Date DATETIME NOT NULL;
 
--- Version 15/10/2020
+-- Version 2020-10-15
 
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Bosnian', 'bs');
 INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
@@ -660,16 +660,23 @@ INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Montenegrin', 'cnr');
 UPDATE wtvmT_Country SET Label='North Macedonia' WHERE Code = 'mk';
 INSERT INTO wtvmT_Country (Code, Label)  VALUES ('rs', 'Serbia');
 
--- Version 02/11/2020
+-- Version 2020-11-02
 
 UPDATE wtvmT_WebStream SET CountryCode = 'rs' WHERE CountryCode = 'cs';
 DELETE FROM wtvmT_Country WHERE Code = 'cs';
 
-
--- Version 03/11/2020
-
+-- Version 2020-11-03
 
 ALTER TABLE wtvmT_Comment DROP FOREIGN KEY FK_Comment_History;
 ALTER TABLE wtvmT_Comment ADD CONSTRAINT FK_Comment_History FOREIGN KEY (HistoryId) REFERENCES wtvmT_History(Id) ON DELETE CASCADE;
 
+-- Version 2020-11-07
+
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Indonesian', 'id');
+UPDATE wtvmT_WebStream SET LangCode = 'id' WHERE LangCode = 'in';
+DELETE FROM wtvmT_Lang WHERE Code = 'in';
+
+INSERT INTO wtvmT_Lang (Label, Code)  VALUES ('Hebrew', 'he');
+UPDATE wtvmT_WebStream SET LangCode = 'he' WHERE LangCode = 'iw';
+DELETE FROM wtvmT_Lang WHERE Code = 'iw';
 
