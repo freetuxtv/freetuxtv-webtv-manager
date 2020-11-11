@@ -136,12 +136,6 @@ Please complete the following information about the link before sending it :
 			echo $form->error($model,'CountryCode');
 		?>
 	</div>
-	<div class="row">
-		<label>Check</label>
-		<div style="display:inline-block">
-   		<div class="g-recaptcha" data-sitekey="<?php echo Yii::app()->params['recaptcha-site-key'] ?>"></div>
-		</div>
-	</div>
 
 	<?php
 		if(Yii::app()->user->isGuest){
@@ -154,7 +148,20 @@ Please complete the following information about the link before sending it :
 	?>
 
 	<div class="row buttons">
-		<?php echo CHtml::submitButton('Send'); ?>
+         <script>
+           function onSubmit(token) {
+             document.getElementById("web-stream-form").submit();
+           }
+         </script>
+    
+		<?php
+            $btnOptions = array();
+            $btnOptions['class'] = "g-recaptcha";
+            $btnOptions['data-sitekey'] = Yii::app()->params['recaptcha-site-key'];
+            $btnOptions['data-callback'] = "onSubmit";
+            $btnOptions['data-action'] = "submit";
+            echo CHtml::button('Send', $btnOptions);
+        ?>
 	</div>
 
 <?php $this->endWidget(); ?>

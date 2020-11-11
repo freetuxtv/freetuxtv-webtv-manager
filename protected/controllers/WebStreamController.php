@@ -189,7 +189,8 @@ class WebStreamController extends Controller
 				}
 
 				// Verify captcha
-				if(!$this->verifyCaptcha()){
+				$debugCaptcha = array();
+				if(!$this->verifyCaptcha($debugCaptcha)){
 					throw new CHttpException(403, "Invalid captcha verification");
 				}
 

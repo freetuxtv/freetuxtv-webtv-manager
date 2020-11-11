@@ -52,13 +52,21 @@
 		<?php echo CHtml::textArea('Comments', '', array('cols'=>80,'rows'=>10)); ?>
 	</div>
 
-	<div class="row">
-   		<div class="g-recaptcha" data-sitekey="<?php echo Yii::app()->params['recaptcha-site-key'] ?>"></div>
-	</div>
-
-
 	<div class="row buttons">
-		<?php echo CHtml::submitButton('Submit change request'); ?>
+         <script>
+           function onSubmit(token) {
+             document.getElementById("edit-request-form").submit();
+           }
+         </script>
+    
+		<?php
+            $btnOptions = array();
+            $btnOptions['class'] = "g-recaptcha";
+            $btnOptions['data-sitekey'] = Yii::app()->params['recaptcha-site-key'];
+            $btnOptions['data-callback'] = "onSubmit";
+            $btnOptions['data-action'] = "submit";
+            echo CHtml::button('Submit change request', $btnOptions);
+        ?>
 	</div>
 
 <?php
